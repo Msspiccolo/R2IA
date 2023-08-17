@@ -1,0 +1,49 @@
+import cv2
+import mediapipe as mp
+import math
+
+video = cv2.VideoCapture(0)
+pose = mp.solutions.pose
+Pose = pose.Pose(min_tracking_confidence=0.5,min_detection_confidence=0.5)
+draw = mp.solutions.drawing_utils
+contador = 0
+check = True
+while True:
+    success,img = video.read()
+    videoRGB = cv2.cvtColor(img,cv2.COLOR_BGR2RGB)
+    results = Pose.process(videoRGB)
+    points = results.pose_landmarks
+    draw.draw_landmarks(img,points,pose.POSE_CONNECTIONS)
+    h,w,_ = img.shape
+
+
+    if points:
+        PeDY = int(points.landmark[pose.PoseLandmark.RIGHT_FOOT_INDEX].y*h)
+        PeDX = int(points.landmark[pose.PoseLandmark.RIGHT_FOOT_INDEX].x*w)
+        PeEY = int(points.landmark[pose.PoseLandmark.LEFT_FOOT_INDEX].y*h)
+        PeEX = int(points.landmark[pose.PoseLandmark.LEFT_FOOT_INDEX].x*w)
+        MaoDY = int(points.landmark[pose.PoseLandmark.RIGHT_INDEX].y*h)
+        MaoDX = int(points.landmark[pose.PoseLandmark.RIGHT_INDEX].x*w)
+        MaoEY = int(points.landmark[pose.PoseLandmark.LEFT_INDEX].y*h)
+        MaoEX = int(points.landmark[pose.PoseLandmark.LEFT_INDEX].x*w)
+
+        distMao = math.hypot(MaoDX-MaoEX,MaoDY-MaoEY)
+        distPE = math.hypot(PeDX - PeEX,PeDY-PeEY)
+        print(f'maos.{distMao} pes {distPE}')
+
+        if check == True and distMao <= 110 and distPE >=110:
+            contador +=1
+            check = False
+        if distMao > 110 and distPE < 110:
+            check = True
+
+
+            texto = f'QTD {contador}'
+            cv2.rectangle(img,(20,240),(280,120),(255,0,0),-1)
+            cv2.putText(img,texto,(40,200),cv2.FONT_HERSHEY_SIMPLEX,2,(255,255,255),5)
+
+
+
+    cv2.imshow('Resultado',img)
+    cv2.waitKey(40)
+
